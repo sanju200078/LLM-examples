@@ -1,0 +1,65 @@
+# ============================================
+# 1. Install dependencies
+# ============================================
+!pip install SpeechRecognition pydub transformers accelerate sentencepiece --quiet
+
+# ============================================
+# 2. Import libraries
+# ============================================
+import speech_recognition as sr
+from pydub import AudioSegment
+from google.colab import files
+from transformers import pipeline
+
+# ============================================
+# 3. Upload MP3 file
+# ============================================
+print("🎤 Please upload your MP3 file")
+uploaded = files.upload()
+audio_file = list(uploaded.keys())[0]
+
+# ============================================
+# 4. Convert MP3 to WAV (for SpeechRecognition)
+# ============================================
+sound = AudioSegment.from_mp3(audio_file)
+wav_file = audio_file.replace(".mp3", ".wav")
+sound.export(wav_file, format="wav")
+
+# ============================================
+# 5. Speech-to-Text (Google STT)
+# ============================================
+recognizer = sr.Recognizer()
+with sr.AudioFile(wav_file) as source:
+    audio_data = recognizer.record(source)
+
+try:
+    query = recognizer.recognize_google(audio_data)
+    print("✅ Voice to Text:", query)
+except Exception as e:
+    print("❌ Could not recognize speech:", e)
+    query = ""
+
+# ============================================
+# 6. Transformer Model (FLAN-T5-Large)
+# ============================================
+if query:
+    print("\n🤖 Generating answer with FLAN-T5-Large...\n")
+    qa_model = pipeline("text2text-generation", model="google/flan-t5-large", device=-1)  # use CPU, change to 0 if GPU
+    prompt = f"Answer this question clearly:\n{query}"
+    result = qa_model(prompt, max_new_tokens=200, truncation=True)
+    print("📖 Transformer Model Answer:\n", result[0]['generated_text'])
+else:
+    print("⚠️ No query detected.")
+-------------------------------------------------------------------------------
+Output
+
+🎤 Please upload your MP3 file
+No file chosen Upload widget is only available when the cell has been executed in the current browser session. Please rerun this cell to enable.
+Saving Record (online-voice-recorder.com).mp3 to Record (online-voice-recorder.com).mp3
+✅ Voice to Text: who is Narendra Modi
+
+🤖 Generating answer with FLAN-T5-Large...
+
+Device set to use cpu
+📖 Transformer Model Answer:
+ Narendra Modi is an Indian politician from the Bharatiya Janata Party.
