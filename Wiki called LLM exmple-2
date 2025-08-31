@@ -1,0 +1,135 @@
+# ============================================
+# 1. Install required libraries
+# ============================================
+!pip install nltk scikit-learn wikipedia
+
+# ============================================
+# 2. Import libraries
+# ============================================
+import nltk
+import warnings
+warnings.filterwarnings("ignore")
+import numpy as np
+import random
+import string
+import wikipedia
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# ============================================
+# 3. Download NLTK data
+# ============================================
+nltk.download('punkt')
+nltk.download('wordnet')
+
+# ============================================
+# 4. Define Wikipedia Q&A function
+# ============================================
+def wiki_answer(query):
+    try:
+        results = wikipedia.search(query)   # search Wikipedia
+        if not results:
+            return "Sorry, I couldn't find anything on Wikipedia."
+        page = results[0]   # pick best match
+        return wikipedia.summary(page, sentences=2)
+    except Exception as e:
+        return f"Sorry, I couldn't fetch info from Wikipedia. ({str(e)})"
+
+# ============================================
+# 5. Simple chatbot function
+# ============================================
+def chatbot_response(user_input):
+    user_input = user_input.lower()
+
+    # exit condition
+    if user_input in ["bye", "exit", "quit"]:
+        return "Goodbye! Have a nice day."
+
+    # try Wikipedia for answers
+    return wiki_answer(user_input)
+
+# ============================================
+# 6. Start chat
+# ============================================
+print("Chatbot: Hi! Ask me anything. Type 'bye' to exit.")
+
+while True:
+    user_input = input("You: ")
+    response = chatbot_response(user_input)
+    print("Chatbot:", response)
+    if response.startswith("Goodbye"):
+        break
+-----------------------------------------------------------------------------------
+Output
+---------------------------------------------------------------------------------
+Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.12/dist-packages (from requests<3.0.0,>=2.0.0->wikipedia) (2025.8.3)
+Requirement already satisfied: soupsieve>1.2 in /usr/local/lib/python3.12/dist-packages (from beautifulsoup4->wikipedia) (2.7)
+Requirement already satisfied: typing-extensions>=4.0.0 in /usr/local/lib/python3.12/dist-packages (from beautifulsoup4->wikipedia) (4.15.0)
+[nltk_data] Downloading package punkt to /root/nltk_data...
+[nltk_data]   Package punkt is already up-to-date!
+[nltk_data] Downloading package wordnet to /root/nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+Chatbot: Hi! Ask me anything. Type 'bye' to exit.
+You: who invented python programming language
+Chatbot: Python is a high-level, general-purpose programming language. Its design philosophy emphasizes code readability with the use of significant indentation.
+You: which year
+Chatbot: Sorry, I couldn't fetch info from Wikipedia. (Page id "which on" does not match any pages. Try another id!)
+You: python invented year
+Chatbot: Python is a high-level, general-purpose programming language. Its design philosophy emphasizes code readability with the use of significant indentation.
+You: what is set
+Chatbot: What Is the What: The Autobiography of Valentino Achak Deng is a 2006 novel written by Dave Eggers. It is based on the life of Valentino Achak Deng, a Sudanese child refugee who immigrated to the United States under the Lost Boys of Sudan program.
+You: what is set in python
+Chatbot: The syntax of the Python programming language is the set of rules that defines how a Python program will be written and interpreted (by both the runtime system and by human readers). The Python language has many similarities to Perl, C, and Java.
+You: modi
+Chatbot: Narendra Damodardas Modi (born 17 September 1950) is an Indian politician who has served as the  prime minister of India since 2014. Modi was the chief minister of Gujarat from 2001 to 2014 and is the member of parliament (MP) for Varanasi.
+---------------------------------------------------------------------------
+# ============================================
+# 1. Install dependencies (if not already)
+# ============================================
+!pip install wikipedia SpeechRecognition pydub gTTS
+
+# ============================================
+# 2. Import libraries
+# ============================================
+import wikipedia
+import speech_recognition as sr
+from pydub import AudioSegment
+from google.colab import files
+
+# ============================================
+# 3. Upload MP3 file
+# ============================================
+print("🎤 Please upload your MP3 file")
+uploaded = files.upload()
+audio_file = list(uploaded.keys())[0]
+
+# ============================================
+# 4. Convert MP3 to WAV (SpeechRecognition needs WAV)
+# ============================================
+sound = AudioSegment.from_mp3(audio_file)
+wav_file = audio_file.replace(".mp3", ".wav")
+sound.export(wav_file, format="wav")
+
+# ============================================
+# 5. Speech-to-Text
+# ============================================
+recognizer = sr.Recognizer()
+with sr.AudioFile(wav_file) as source:
+    audio_data = recognizer.record(source)
+
+try:
+    query = recognizer.recognize_google(audio_data)
+    print("✅ Voice to Text:", query)
+except Exception as e:
+    print("❌ Sorry, could not recognize speech:", e)
+    query = ""
+
+# ============================================
+# 6. Get Wikipedia Answer
+# ============================================
+if query:
+    try:
+        results = wikipedia.summary(query, sentences=2)
+        print("\n📖 Wikipedia Answer:\n", results)
+    except Exception as e:
+        print("❌ Wikipedia error:", e)
