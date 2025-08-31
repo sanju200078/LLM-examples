@@ -1,0 +1,122 @@
+# ============================================
+# 1. Install dependencies
+# ============================================
+!pip install SpeechRecognition pydub transformers accelerate sentencepiece --quiet
+
+# ============================================
+# 2. Import libraries
+# ============================================
+import speech_recognition as sr
+from pydub import AudioSegment
+from google.colab import files
+from transformers import pipeline
+
+# ============================================
+# 3. Upload MP3 file
+# ============================================
+print("🎤 Please upload your MP3 file")
+uploaded = files.upload()
+audio_file = list(uploaded.keys())[0]
+
+# ============================================
+# 4. Convert MP3 to WAV (for SpeechRecognition)
+# ============================================
+sound = AudioSegment.from_mp3(audio_file)
+wav_file = audio_file.replace(".mp3", ".wav")
+sound.export(wav_file, format="wav")
+
+# ============================================
+# 5. Speech-to-Text (Google STT)
+# ============================================
+recognizer = sr.Recognizer()
+with sr.AudioFile(wav_file) as source:
+    audio_data = recognizer.record(source)
+
+try:
+    query = recognizer.recognize_google(audio_data)
+    print("✅ Voice to Text:", query)
+except Exception as e:
+    print("❌ Could not recognize speech:", e)
+    query = ""
+
+# ============================================
+# 6. QA Model (distilbert Q&A)
+# ============================================
+if query:
+    print("\n🤖 Generating English Answer...\n")
+
+    # Use a summarization / QA model instead of FLAN
+    qa_model = pipeline("text-generation", model="gpt2", device=-1)  # small, free model
+
+    prompt_en = f"Explain clearly in simple English:\n{query}"
+    result_en = qa_model(prompt_en, max_new_tokens=150, truncation=True)
+    english_answer = result_en[0]['generated_text']
+    print("📖 English Answer:\n", english_answer)
+
+    # ============================================
+    # 7. Translation (English → Hindi)
+    # ============================================
+    print("\n🌏 Translating to Hindi...\n")
+    translator = pipeline("translation", model="Helsinki-NLP/opus-mt-en-hi")
+    hindi_answer = translator(english_answer, max_length=200)[0]['translation_text']
+    print("🌏 हिंदी उत्तर:\n", hindi_answer)
+
+else:
+    print("⚠️ No query detected.")
+--------------------------------------------------------------------------------------------
+Output
+-------------------------------------------------------------------------------------------
+lease upload your MP3 file
+No file chosen Upload widget is only available when the cell has been executed in the current browser session. Please rerun this cell to enable.
+Saving Record (online-voice-recorder.com) (2).mp3 to Record (online-voice-recorder.com) (2) (2).mp3
+✅ Voice to Text: explain about NATO NATO
+
+🤖 Generating English Answer...
+
+config.json: 100%
+ 665/665 [00:00<00:00, 72.4kB/s]
+model.safetensors: 100%
+ 548M/548M [00:15<00:00, 32.7MB/s]
+generation_config.json: 100%
+ 124/124 [00:00<00:00, 9.56kB/s]
+tokenizer_config.json: 100%
+ 26.0/26.0 [00:00<00:00, 1.86kB/s]
+vocab.json: 100%
+ 1.04M/1.04M [00:00<00:00, 6.18MB/s]
+merges.txt: 100%
+ 456k/456k [00:00<00:00, 2.72MB/s]
+tokenizer.json: 100%
+ 1.36M/1.36M [00:00<00:00, 8.11MB/s]
+Device set to use cpu
+Setting `pad_token_id` to `eos_token_id`:50256 for open-end generation.
+📖 English Answer:
+ Explain clearly in simple English:
+explain about NATO NATO is an alliance of nations that share a common cause. In the name of NATO, we are a nation that stands for freedom, openness and security. We are open, inclusive, open and compassionate. We have strong values. We are tolerant and democratic. Our people are good people, good people, and decent people. We are a democratic country and we are a democratic partner. We are free. We are a free country.
+
+In the context of the above, it seems that if it were not for the fact that the "people" of the United States and the NATO alliance are not the same people, perhaps the entire NATO alliance would not exist.
+
+As I outlined after the NATO summit, the relationship between the United States and
+
+🌏 Translating to Hindi...
+
+config.json: 
+ 1.39k/? [00:00<00:00, 88.6kB/s]
+pytorch_model.bin: 100%
+ 306M/306M [00:04<00:00, 68.5MB/s]
+generation_config.json: 100%
+ 293/293 [00:00<00:00, 17.6kB/s]
+model.safetensors: 100%
+ 306M/306M [00:06<00:00, 20.1MB/s]
+tokenizer_config.json: 100%
+ 44.0/44.0 [00:00<00:00, 2.64kB/s]
+source.spm: 100%
+ 812k/812k [00:00<00:00, 56.9MB/s]
+target.spm: 100%
+ 1.07M/1.07M [00:00<00:00, 47.3MB/s]
+vocab.json: 
+ 2.10M/? [00:00<00:00, 45.3MB/s]
+/usr/local/lib/python3.12/dist-packages/transformers/models/marian/tokenization_marian.py:175: UserWarning: Recommended: pip install sacremoses.
+  warnings.warn("Recommended: pip install sacremoses.")
+Device set to use cuda:0
+🌏 हिंदी उत्तर:
+ सरल अंग्रेज़ी में स्पष्ट रूप से व्याख्या करें: NATO के बारे में एक साझा राष्ट्र है. NATO के नाम से हम एक ऐसी राष्ट्र हैं जो स्वतंत्रता के लिए खड़ा है, खुलेपन और करुणामय है. हम मजबूत मान रहे हैं. हम सहनशील हैं और लोकतंत्रीय लोग हैं. हमारे लोग अच्छे लोग हैं, और विदेशी लोग हैं. हम एक देश हैं, और हम एक लोकतांत्रिक हैं. हम एक ही देश हैं. "ओ. हम एक ही देश के बारे में बात नहीं कर रहे हैं, और फिर हम एक ही देश के बारे में बात कर रहे हैं. हम एक ही देश के बारे में बता रहे हैं. हम एक ही देश में बात कर रहे हैं. हम एक ही देश के बारे में बता रहे हैं, और फिर हम एक ही देश के बारे में बात कर रहे हैं. हम एक ही देश में बात कर रहे हैं. हम एक ही देश के बारे में बात कर रहे हैं. हम एक ही देश के बारे में बता रहे हैं कि यह है कि
