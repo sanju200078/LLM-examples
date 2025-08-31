@@ -1,0 +1,216 @@
+from google.colab import files
+uploaded = files.upload()
+-------------------------------------------
+!pip install nltk scikit-learn
+
+---------------------------------------
+Requirement already satisfied: nltk in /usr/local/lib/python3.12/dist-packages (3.9.1)
+Requirement already satisfied: scikit-learn in /usr/local/lib/python3.12/dist-packages (1.6.1)
+Requirement already satisfied: click in /usr/local/lib/python3.12/dist-packages (from nltk) (8.2.1)
+Requirement already satisfied: joblib in /usr/local/lib/python3.12/dist-packages (from nltk) (1.5.1)
+Requirement already satisfied: regex>=2021.8.3 in /usr/local/lib/python3.12/dist-packages (from nltk) (2024.11.6)
+Requirement already satisfied: tqdm in /usr/local/lib/python3.12/dist-packages (from nltk) (4.67.1)
+Requirement already satisfied: numpy>=1.19.5 in /usr/local/lib/python3.12/dist-packages (from scikit-learn) (2.0.2)
+Requirement already satisfied: scipy>=1.6.0 in /usr/local/lib/python3.12/dist-packages (from scikit-learn) (1.16.1)
+Requirement already satisfied: threadpoolctl>=3.1.0 in /usr/local/lib/python3.12/dist-packages (from scikit-learn) (3.6.0)
+----------------------------------------------------------------------------------------
+import nltk
+nltk.download('punkt')
+nltk.download('wordnet')
+------------------------------
+import nltk
+
+# Already have these
+nltk.download('punkt')
+nltk.download('wordnet')
+
+# New requirement for latest nltk
+nltk.download('punkt_tab')
+---------------------------------------------------------------------
+Qn1)                                                                     PyBot: Chatbot for Python Queries-Qn1-Two files we upload
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ==============================
+# 1. Install required libraries
+# ==============================
+!pip install nltk scikit-learn
+
+# ==============================
+# 2. Import libraries
+# ==============================
+import nltk
+import warnings
+warnings.filterwarnings("ignore")
+import numpy as np
+import random
+import string
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# ==============================
+# 3. Download NLTK data
+# ==============================
+nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('punkt_tab')  # fix for new nltk versions
+
+# ==============================
+# 4. Upload required text files
+# ==============================
+from google.colab import files
+uploaded = files.upload()
+
+# Make sure your files:
+# - nlp python answer finals.txt
+# - modules pythons.txt
+# are uploaded.
+
+# ==============================
+# 5. Load text data
+# ==============================
+f = open('nlp python answer finals.txt','r',errors='ignore')
+m = open('modules pythons.txt','r',errors='ignore')
+
+raw = f.read().lower()
+rawone = m.read().lower()
+
+# Tokenization
+sent_tokens = nltk.sent_tokenize(raw)
+word_tokens = nltk.word_tokenize(raw)
+sent_tokensone = nltk.sent_tokenize(rawone)
+word_tokensone = nltk.word_tokenize(rawone)
+
+# ==============================
+# 6. Text Preprocessing
+# ==============================
+lemmer = nltk.stem.WordNetLemmatizer()
+def LemTokens(tokens):
+    return [lemmer.lemmatize(token) for token in tokens]
+
+remove_punct_dict = dict((ord(punct), None) for punct in string.punctuation)
+def LemNormalize(text):
+    return LemTokens(nltk.word_tokenize(text.lower().translate(remove_punct_dict)))
+
+# ==============================
+# 7. Predefined Responses
+# ==============================
+Introduce_Ans = [
+    "My name is PyBot.",
+    "My name is PyBot, you can call me Pi.",
+    "I'm PyBot :)",
+    "My nickname is Pi, happy to solve your queries :)"
+]
+
+GREETING_INPUTS = ("hello", "hi", "hiii", "hii", "hey", "greetings", "sup", "what's up")
+GREETING_RESPONSES = ["hi", "hey", "hii there", "hi there", "hello", "Glad you are talking to me"]
+
+Basic_Q = ("what is python ?", "what is python", "what is python?", "what is python.")
+Basic_Ans = "Python is a high-level, interpreted, interactive and object-oriented language. It is designed to be highly readable."
+
+Basic_Om = ("what is module", "what is module?", "what is module in python", "what is module in python?")
+Basic_AnsM = [
+    "A module is a code library.",
+    "A file containing functions you want to include.",
+    "A module can define functions, classes and variables."
+]
+
+# ==============================
+# 8. Helper Functions
+# ==============================
+def greeting(sentence):
+    for word in sentence.split():
+        if word.lower() in GREETING_INPUTS:
+            return random.choice(GREETING_RESPONSES)
+
+def basic(sentence):
+    for word in Basic_Q:
+        if sentence.lower() == word:
+            return Basic_Ans
+
+def basicM(sentence):
+    for word in Basic_Om:
+        if sentence.lower() == word:
+            return random.choice(Basic_AnsM)
+
+def IntroduceMe(sentence):
+    return random.choice(Introduce_Ans)
+
+def response(user_response):
+    robo_response = ''
+    sent_tokens.append(user_response)
+    TfidfVec = TfidfVectorizer(tokenizer=LemNormalize, stop_words='english')
+    tfidf = TfidfVec.fit_transform(sent_tokens)
+    vals = cosine_similarity(tfidf[-1], tfidf)
+    idx = vals.argsort()[0][-2]
+    flat = vals.flatten()
+    flat.sort()
+    req_tfidf = flat[-2]
+    if req_tfidf == 0:
+        robo_response = "I am sorry! I don't understand you"
+    else:
+        robo_response = sent_tokens[idx]
+    sent_tokens.remove(user_response)
+    return robo_response
+
+def responseone(user_response):
+    robo_response = ''
+    sent_tokensone.append(user_response)
+    TfidfVec = TfidfVectorizer(tokenizer=LemNormalize, stop_words='english')
+    tfidf = TfidfVec.fit_transform(sent_tokensone)
+    vals = cosine_similarity(tfidf[-1], tfidf)
+    idx = vals.argsort()[0][-2]
+    flat = vals.flatten()
+    flat.sort()
+    req_tfidf = flat[-2]
+    if req_tfidf == 0:
+        robo_response = "I am sorry! I don't understand you"
+    else:
+        robo_response = sent_tokensone[idx]
+    sent_tokensone.remove(user_response)
+    return robo_response
+
+def chat(user_response):
+    user_response = user_response.lower()
+    if user_response != 'bye':
+        if user_response in ['thanks', 'thank you']:
+            return "You are welcome.."
+        elif basicM(user_response) is not None:
+            return basicM(user_response)
+        elif any(x in user_response for x in [" module ", " module", "module "]):
+            return responseone(user_response)
+        elif greeting(user_response) is not None:
+            return greeting(user_response)
+        elif "your name" in user_response:
+            return IntroduceMe(user_response)
+        elif basic(user_response) is not None:
+            return basic(user_response)
+        else:
+            return response(user_response)
+    else:
+        return "Bye! take care.."
+
+# ==============================
+# 9. Start Chat
+# ==============================
+print("PyBot: Hello! Ask me something about Python. Type 'bye' to exit.")
+
+while True:
+    user = input("You: ")
+    ans = chat(user)
+    print("PyBot:", ans)
+    if user.lower() == "bye":
+        break
+output----------------------------------------
+No file chosen Upload widget is only available when the cell has been executed in the current browser session. Please rerun this cell to enable.
+Saving nlp python answer finals.txt to nlp python answer finals (1).txt
+Saving modules pythons.txt to modules pythons (1).txt
+PyBot: Hello! Ask me something about Python. Type 'bye' to exit.
+You: what is python?
+PyBot: Python is a high-level, interpreted, interactive and object-oriented language. It is designed to be highly readable.
+You: what is module?
+PyBot: A module is a code library.
+You: Write a program that asks the user for two numbers and prints their sum and product.
+PyBot: print() is a function to display the output of a program, using the parenthesized version is arguably more consistent.
+You: scan()
+PyBot: I am sorry! I don't understand you
+You: what is delegates
+PyBot: I am sorry! I don't understand you
