@@ -1,0 +1,79 @@
+# ============================================
+# 1. Install dependencies
+# ============================================
+!pip install gradio SpeechRecognition pydub transformers accelerate sentencepiece --quiet
+
+# ============================================
+# 2. Import libraries
+# ============================================
+import speech_recognition as sr
+from pydub import AudioSegment
+from transformers import pipeline
+import gradio as gr
+import os
+
+# ============================================
+# 3. Define processing function
+# ============================================
+def process_audio(audio_file):
+    try:
+        # Convert MP3 → WAV
+        wav_file = audio_file.replace(".mp3", ".wav")
+        sound = AudioSegment.from_mp3(audio_file)
+        sound.export(wav_file, format="wav")
+
+        # Speech-to-Text
+        recognizer = sr.Recognizer()
+        with sr.AudioFile(wav_file) as source:
+            audio_data = recognizer.record(source)
+        query = recognizer.recognize_google(audio_data)
+
+        # English Explanation
+        qa_model = pipeline("text-generation", model="gpt2", device=-1)
+        prompt_en = f"Explain clearly in simple English:\n{query}"
+        result_en = qa_model(prompt_en, max_new_tokens=150, truncation=True)
+        english_answer = result_en[0]['generated_text']
+
+        # Translation English → Hindi
+        translator = pipeline("translation", model="Helsinki-NLP/opus-mt-en-hi")
+        hindi_answer = translator(english_answer, max_length=200)[0]['translation_text']
+
+        return query, english_answer, hindi_answer
+
+    except Exception as e:
+        return "Error: " + str(e), "", ""
+
+# ============================================
+# 4. Build Gradio UI
+# ============================================
+with gr.Blocks(theme="soft") as demo:
+    gr.Markdown("## 🎤 Voice → Text → QA → Hindi Translation")
+
+    with gr.Row():
+        audio_input = gr.File(label="Upload MP3 File", type="filepath")
+    
+    with gr.Row():
+        query_out = gr.Textbox(label="🎧 Recognized Query (STT Output)")
+    
+    with gr.Row():
+        english_out = gr.Textbox(label="📖 English Answer")
+    
+    with gr.Row():
+        hindi_out = gr.Textbox(label="🌏 हिंदी उत्तर")
+    
+    btn = gr.Button("🚀 Run")
+    btn.click(fn=process_audio, inputs=audio_input, outputs=[query_out, english_out, hindi_out])
+
+# ============================================
+# 5. Launch
+# ============================================
+demo.launch()
+--------------------------------------------------------------
+output
+-------------------------------------------------------------
+It looks like you are running Gradio on a hosted Jupyter notebook, which requires `share=True`. Automatically setting `share=True` (you can turn this off by setting `share=False` in `launch()` explicitly).
+
+Colab notebook detected. To show errors in colab notebook, set debug=True in launch()
+* Running on public URL: https://25ad662b4728a96488.gradio.live
+
+This share link expires in 1 week. For free permanent hosting and GPU upgrades, run `gradio deploy` from the terminal in the working directory to deploy to Hugging Face Spaces (https://huggingface.co/spaces)
